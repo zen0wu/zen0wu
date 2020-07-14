@@ -1,4 +1,5 @@
-### Hi there 👋
+### After creating this, I realized I don't know what to say. 
+### So godspeed to you, my friend.
 
 <!--
 **zen0wu/zen0wu** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
@@ -14,3 +15,4 @@ Here are some ideas to get you started:
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ...
 -->
+
