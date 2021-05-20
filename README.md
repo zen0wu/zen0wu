@@ -1,5 +1,6 @@
-### After creating this, I realized I don't know what to say. 
-### So godspeed to you, my friend.
+- Abstraction is great, but not too much.
+- Optimize for simplicity, but not easy.
+- Pick the right defaults.
 
 <!--
 **zen0wu/zen0wu** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
