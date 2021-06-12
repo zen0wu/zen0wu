@@ -1,6 +1,6 @@
 - Abstraction is great, but not too much.
 - Optimize for simplicity, but not easy.
-- Pick the right defaults.
+- Pick the right defaults, opt-in vs opt-out.
 
 <!--
 **zen0wu/zen0wu** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
