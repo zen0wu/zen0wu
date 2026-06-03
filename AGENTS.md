@@ -41,3 +41,41 @@ If you're a coding agent, follow these rules strictly!
 - No nesting: Make serious efforts to make the logic streamlined. Only add nesting when absolutely necessary.
 - Simple and dumb: Be as simple and dumb as possible. Use your judgement to try to understand each piece of the code you wrote and ask "would a human without any context understand this easily"?
 - Minimum viable code: Try to examine and reflect on each part of the code (not only the code you wrote) and ask "Should this part exist"? If not, ruthless remove them.
+- Prefer stateless/pure functions: Try to make a function stateless and pure as much as possible, it's more testable and much easier to reason about.
+- Name things literally: Name functions/variables by what they do, not every condition/context.
+
+## Case studies
+
+1. Boolean logics
+
+Bad code:
+
+```ts
+function setGoMemoryForBoxyTypecheck() {}
+  if (process.env.BOXY_NAME !== undefined && process.env.GOMEMLIMIT === undefined) {
+    process.env.GOMEMLIMIT = '20GiB'
+  }
+}
+```
+
+Why?
+
+- process.env.X and Y are not the intention. They're the condition. Readers without context won't understand what they do.
+- Concatenating these two conditions are confusing because they don't speak the same matter.
+- Mutation of process.env is BAD. The intention of this code is to pass the the memory limit to spawned process, then we should pass this when spawning.
+
+Good code:
+
+```ts
+function getGoMemory() {}
+  if (process.env.BOXY_NAME !== undefined) {
+    return process.env.GOMEMLIMIT ?? '20GiB'
+  }
+  return undefined
+}
+```
+
+Why:
+- The name of the function is a bit more generalized. We should think of this as "it's a function to configure memory limit", not "a function to set memory only for boxy when running typecheck".
+- This is a pure function. Does not mutate state (getter, not setter).
+- The condition nesting are well justified. The first level says "We want to adjust memory for boxy" and the second level (even tho written as trinary) says "We don't want to overwrite existing values".
