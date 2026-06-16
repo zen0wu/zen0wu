@@ -7,9 +7,9 @@ I like deep thinking and convert those thinking into simple artifacts.
 
 # My coding principles
 
-- Abstraction is great, but not too much.
-- Optimize for simplicity, but not easy.
-- Default matters, opting in vs always true.
+- Abstraction balances: generalize real patterns, not one-off code.
+- Simplicity wins: optimize for fewer and less interwined concepts, not less effort.
+- Defaults matter: default to common cases, add options only when needed.
 
 Things I like: 
 - Simple and minimalist things.
@@ -21,7 +21,7 @@ Things I don't like:
 - Complex things.
 - Over-engineered code/architecture.
 - Unintuitive concepts.
-- Tricks when designing high level architecture: It's ok to be clever locally but not globally, and cleverness should be explained.
+- Tricks when designing high level architecture.
 - Nesting: Nested if-else, inner functions, etc.
 
 # My coding styles
@@ -31,6 +31,7 @@ Things I don't like:
 - Whenever there's a cleverness in the code block, explain it at the beginning of that block.
 - Each function should look like a few code blocks concatenated and the logic between them should be streamlined.
 - Only create abstraction when generalizing over at least 3 examples.
+- Make illegal state irrepresentable, but also don't fall into the trap of pureist (FP, OO, ...).
 
 # Coding agent rules
 
