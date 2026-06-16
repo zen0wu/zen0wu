@@ -146,3 +146,108 @@ Why?
 - Each state owns only the fields that make sense for that state.
 - The function does not need a fallback for impossible data.
 - The code is simpler because both sides of the function use honest data shapes.
+
+3. Abstraction timing
+
+Bad code:
+
+```ts
+type SaveModelOptions<T, Model> = {
+  table: string
+  getId: (input: T) => string
+  getData: (input: T) => object
+  afterSave: (model: Model) => Promise<void>
+}
+
+function createSaveModel<T, Model>(options: SaveModelOptions<T, Model>) {
+  return async function saveModel(input: T) {
+    const id = options.getId(input)
+    const data = options.getData(input)
+
+    const model = await db[options.table].upsert({
+      where: { id },
+      update: data,
+      create: { id, ...data },
+    })
+
+    await options.afterSave(model)
+
+    await sendSlackMessage({
+      channel: "#engineering-feed",
+      text: `Saved ${options.table} ${id}`,
+    })
+
+    return model
+  }
+}
+
+const saveUser = createSaveModel<UserInput, User>({
+  table: "user",
+  getId: input => input.id,
+  getData: input => ({ name: input.name, email: input.email }),
+  afterSave: user => emailQueue.enqueue("verify_email", { userId: user.id }),
+})
+
+const saveProject = createSaveModel<ProjectInput, Project>({
+  table: "project",
+  getId: input => input.id,
+  getData: input => ({ name: input.name }),
+  afterSave: project => permissions.rebuildProject(project.id),
+})
+```
+
+Why?
+
+- An abstraction is not free. `createSaveModel` creates a second-order concept every reader has to learn.
+- Here, the abstraction exists because two functions would have looked similar, not because the reader benefits from learning a new concept.
+- Passing `getId`, `getData`, and `afterSave` is a smell here. The helper depends on callbacks instead of plain data.
+- `afterSave` is an escape hatch for arbitrary domain behavior.
+- Posting to Slack is surprising from a generic save helper. Side effects in an abstraction should fit the abstraction's name and scope.
+
+Good code:
+
+```ts
+async function saveUser(input: UserInput) {
+  const user = await db.user.upsert({
+    where: { id: input.id },
+    update: {
+      name: input.name,
+      email: input.email,
+    },
+    create: {
+      id: input.id,
+      name: input.name,
+      email: input.email,
+    },
+  })
+
+  await emailQueue.enqueue("verify_email", { userId: user.id })
+
+  return user
+}
+
+async function saveProject(input: ProjectInput) {
+  const project = await db.project.upsert({
+    where: { id: input.id },
+    update: {
+      name: input.name,
+    },
+    create: {
+      id: input.id,
+      name: input.name,
+    },
+  })
+
+  await permissions.rebuildProject(project.id)
+
+  return project
+}
+```
+
+Why?
+
+- The code is boring, but each function says exactly what it does.
+- The side effects are concrete and domain-specific.
+- There is no generic callback-shaped escape hatch.
+- The duplication is small and still easy to read.
+- There are only two examples, so the shared shape has not earned a name yet.
