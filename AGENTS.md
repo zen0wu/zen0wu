@@ -39,6 +39,7 @@ If you're a coding agent, follow these rules strictly!
 
 - Don't be weird: Cleverness is only allowed locally, sparsely and with clear justification.
 - No fallback: You have the tendancy to add fallback/make things safe. Just let it fail and only add try/catch when absolutely needed.
+- Typed errors: Throw specific error classes or typed error values. Never throw generic `new Error`.
 - No nesting: Make serious efforts to make the logic streamlined. Only add nesting when absolutely necessary.
 - Simple and dumb: Be as simple and dumb as possible. Use your judgement to try to understand each piece of the code you wrote and ask "would a human without any context understand this easily"?
 - Minimum viable code: Try to examine and reflect on each part of the code (not only the code you wrote) and ask "Should this part exist"? If not, ruthless remove them.
@@ -279,7 +280,7 @@ async function openDocument(args: OpenDocumentArgs): Promise<Document> {
       }
     }
 
-    throw error
+    throw new Error(`Failed to open document: ${args.filePath}`)
   }
 }
 ```
@@ -290,15 +291,38 @@ Why?
 - `openDocument` sounds simple, but it secretly means read, parse, recover, and maybe create.
 - The defaults are too strong. Missing files and invalid JSON become empty documents unless the caller opts out.
 - The `catch` treats unrelated failures the same way: file missing, invalid JSON, permission errors, and disk errors.
+- `new Error` is too generic. Callers can only inspect a string instead of handling a typed failure.
 - Returning an empty document is not error handling. It is inventing data.
 - `createIfMissing` and `recoverInvalidJson` are API smells because they hide product decisions inside boolean options.
 
 Good code:
 
 ```ts
+class InvalidDocumentJsonError extends Error {
+  readonly filePath: string
+  readonly sourceError: unknown
+
+  constructor(filePath: string, sourceError: unknown) {
+    super(`Invalid document JSON: ${filePath}`)
+    this.name = "InvalidDocumentJsonError"
+    this.filePath = filePath
+    this.sourceError = sourceError
+  }
+}
+
 async function readDocument(filePath: string): Promise<Document> {
   const text = await fs.readFile(filePath, "utf8")
-  return JSON.parse(text) as Document
+  return parseDocument(filePath, text)
+}
+
+function parseDocument(filePath: string, text: string): Document {
+  // JSON.parse throws SyntaxError, which is a parser detail.
+  // Convert it once at the document boundary so callers see a typed document error.
+  try {
+    return JSON.parse(text) as Document
+  } catch (sourceError) {
+    throw new InvalidDocumentJsonError(filePath, sourceError)
+  }
 }
 
 async function createDocument(filePath: string): Promise<Document> {
@@ -321,6 +345,7 @@ Why?
 
 - Reading and creating are separate operations.
 - The empty document default exists only in the creation path.
-- `readDocument` does not catch errors it cannot honestly handle.
-- Missing files, invalid JSON, and permission errors fail with their real cause.
+- Invalid JSON is converted into a typed document error at the parser boundary.
+- `readDocument` still does not catch errors it cannot honestly handle.
+- Missing files and permission errors fail with their real cause.
 - The API is smaller because callers choose the behavior directly instead of configuring a vague helper.
