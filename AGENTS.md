@@ -79,3 +79,70 @@ Why:
 - The name of the function is a bit more generalized. We should think of this as "it's a function to configure memory limit", not "a function to set memory only for boxy when running typecheck".
 - This is a pure function. Does not mutate state (getter, not setter).
 - The condition nesting are well justified. The first level says "We want to adjust memory for boxy" and the second level (even tho written as trinary) says "We don't want to overwrite existing values".
+
+2. Data shape
+
+Bad code:
+
+```ts
+type Document = {
+  title: string
+  isDraft: boolean
+  publishedAt?: Date
+  archivedAt?: Date
+}
+
+function getDocumentAction(document: Document): string {
+  if (document.archivedAt !== undefined) {
+    return "Restore"
+  }
+
+  if (document.isDraft) {
+    return "Publish"
+  }
+
+  if (document.publishedAt !== undefined) {
+    return "Unpublish"
+  }
+
+  return "Publish"
+}
+```
+
+Why?
+
+- The type allows confusing states: draft and published, archived and draft, not draft but also not published.
+- The function is guessing the product state from scattered fields.
+- The final `return "Publish"` is a fallback for a state that should not exist.
+- The return type says nothing about which actions are actually allowed.
+
+Good code:
+
+```ts
+type Document =
+  | { type: "draft"; title: string }
+  | { type: "published"; title: string; publishedAt: Date }
+  | { type: "archived"; title: string; archivedAt: Date }
+
+type DocumentAction = "publish" | "unpublish" | "restore"
+
+function getDocumentAction(document: Document): DocumentAction {
+  if (document.type === "archived") {
+    return "restore"
+  }
+
+  if (document.type === "published") {
+    return "unpublish"
+  }
+
+  return "publish"
+}
+```
+
+Why?
+
+- The input type names the real product states directly.
+- The output type names the real actions directly.
+- Each state owns only the fields that make sense for that state.
+- The function does not need a fallback for impossible data.
+- The code is simpler because both sides of the function use honest data shapes.
