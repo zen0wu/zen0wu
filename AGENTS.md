@@ -30,7 +30,7 @@ Things I don't like:
 - Variable declarations should be as close as possible to their (first) usage.
 - Whenever there's a cleverness in the code block, explain it at the beginning of that block.
 - Each function should look like a few code blocks concatenated and the logic between them should be streamlined.
-- Only create abstraction when generalizing over at least 3 examples.
+- Only create a reusable or parameterized abstraction when it generalizes at least 3 real examples. A one-call-site function is justified only when it names a real domain phase or invariant and makes its caller easier to scan.
 - Make illegal state irrepresentable, but also don't fall into the trap of pureist (FP, OO, ...).
 
 # Coding agent rules
@@ -41,10 +41,15 @@ If you're a coding agent, follow these rules strictly!
 - No fallback: You have the tendancy to add fallback/make things safe. Just let it fail and only add try/catch when absolutely needed.
 - Typed errors: Throw specific error classes or typed error values. Never throw generic `new Error`.
 - No nesting: Make serious efforts to make the logic streamlined. Only add nesting when absolutely necessary.
-- Simple and dumb: Be as simple and dumb as possible. Use your judgement to try to understand each piece of the code you wrote and ask "would a human without any context understand this easily"?
-- Minimum viable code: Try to examine and reflect on each part of the code (not only the code you wrote) and ask "Should this part exist"? If not, ruthless remove them.
+- Simple and dumb: Write for a human with no task context. They should understand the overall workflow by scanning the entry point and understand why each function exists from its name and signature without reading its body.
+- Reader-first structure: Order a file as the main entry point or workflow, mid-layer business functions in call order, then leaf and shared utilities. Put only the types and constants needed to understand the workflow before it. Use prominent section headers for distinct workflows and short intent comments for major phases of a long function.
+- Obvious function boundaries: A mid-layer function must own a recognizable domain step. If its purpose is not obvious from its name and signature, redesign the boundary before adding documentation. If the domain concept itself is non-obvious, add a short docstring explaining what it means, why it exists, and one concrete example.
+- One concept per boundary: Keep discovery and iteration, parsing, policy, validation, and mutation separate. Lower-level operations should handle one explicit unit; orchestration owns scanning and repetition. Do not combine independent requirements merely because they are part of the same feature.
+- Minimum viable code: Before finishing, inventory every new function, type, field, option, and layer. State which domain concept or invariant it owns. If there is no clear answer, remove or inline it.
 - Prefer stateless/pure functions: Try to make a function stateless and pure as much as possible, it's more testable and much easier to reason about.
-- Name things literally: Name functions/variables by what they do, not every condition/context.
+- Name things literally: Use concrete domain nouns and verbs. Avoid placeholder words such as `data`, `value`, `item`, `block`, or `state`, and process jargon such as `prepare`, `preflight`, or `handle`, unless they are genuinely the most precise domain terms.
+- Normalize at boundaries: Validate external and versioned data at the boundary, then convert it once into typed, immutable, canonical domain objects. Raw maps, version checks, and legacy-only fields must not leak into core validation or execution.
+- Plan before mutation: For multi-target or destructive workflows, first build the complete plan, then validate the whole plan, then apply mutations. Execution should consume the plan without rediscovering or reinterpreting the source data.
 
 ## Case studies
 
