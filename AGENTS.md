@@ -33,6 +33,74 @@ Things I don't like:
 - Only create a reusable or parameterized abstraction when it generalizes at least 3 real examples. A one-call-site function is justified only when it names a real domain phase or invariant and makes its caller easier to scan.
 - Make illegal state irrepresentable, but also don't fall into the trap of pureist (FP, OO, ...).
 
+# Architecture reasoning
+
+- Name the exact layer: Use the exact product, controller, and resource names. Do not collapse related mechanisms with `/` or use them as synonyms when their behavior differs.
+- Qualify feasibility claims: Never say something is "impossible", "required", "the only way", or "cannot work" unless the claim names the active constraints, the component responsible for the behavior, and the invariant that prevents it.
+- Classify limitations: Clearly distinguish physically impossible, unsupported by the underlying platform or API, unsupported by the current implementation or configuration, possible but not yet validated, and possible but rejected because of operational trade-offs.
+- Resolve ambiguous terminology: Restate the concrete interpretation before reasoning. If different interpretations materially change the answer, analyze them separately.
+- Check adjacent mechanisms: Before making an architectural impossibility claim, identify the nearest alternative mechanisms that relax one assumption and verify their capabilities using current code or primary documentation.
+- Use a capability matrix when two or more independent dimensions affect the conclusion. Do not compress a multidimensional comparison into a single recommendation.
+
+## Terminology discipline
+
+- Define before use: Before using a system component, integration, event, or overloaded technical term that the user did not introduce, define it in plain language.
+- One concept, one name: Choose one canonical term for each distinct concept and reuse that exact term throughout the response. Do not alternate between synonyms such as "platform", "service", "system", "built-in behavior", or "path".
+- Ban unnamed mechanisms: Do not use vague subjects such as "it", "this", "the platform", "the current path", or "the built-in behavior" when more than one component is in scope. Name the responsible component.
+- Separate capability layers: Distinguish what the underlying product supports, what a specific integration supports, what its API or infrastructure adapter exposes, and what the current repository configuration enables.
+- Attribute every limitation: Write capability claims as "<exact component> supports/does not support <behavior>". Never write an unqualified "supported", "unsupported", "cannot", or "does not work".
+- Explain qualifiers immediately: Define terms such as "trusted author", "command phrase", "native trigger", or "separate webhook" at first use, before reasoning about their consequences.
+- Answer first: Start with the direct answer in the user's language. Introduce architecture terminology only when it is necessary to explain that answer.
+- Check terminology before responding: Identify every named component in the draft, replace alternate names with its canonical term, and confirm every capability or limitation is attributed to the correct component.
+
+## Architecture case study: layered integrations
+
+Bad:
+
+> The platform supports inline comments, but the provider does not, so the current path needs a separate webhook.
+
+Why?
+
+- "Platform", "provider", "current path", and "separate webhook" are not defined.
+- The reader cannot tell whether "provider" means the external product's native integration, an API client, or an infrastructure-as-code adapter.
+- The same component may be renamed later as a "service" or "built-in behavior", making the explanation internally inconsistent.
+- The claim mixes product capability, configuration exposure, and the repository's current configuration.
+
+Good:
+
+> GitHub emits a `pull_request_review_comment` event for each new inline comment or reply. Buildkite's native GitHub integration can create builds from that event, but requires the comment to contain a configured command phrase and come from a trusted author. The Buildkite Terraform provider does not expose the setting that enables this trigger. Therefore, the current Terraform configuration cannot enable arbitrary inline-comment triggers.
+
+Why?
+
+- Each component has one stable name.
+- Every capability and limitation is attributed to the component responsible for it.
+- The explanation defines the event and distinguishes product behavior, Terraform exposure, and current configuration.
+- The conclusion follows from the named constraints without introducing another vague mechanism.
+
+## Architecture case study: infrastructure layers
+
+Bad:
+
+> Non-Auto EKS requires one node group per AZ for persistent EBS.
+
+Why?
+
+- "Non-Auto EKS" does not identify the node provisioner.
+- "Node group" conflates EKS Managed Node Groups with Karpenter NodePools.
+- It presents a limitation of multi-AZ Auto Scaling Groups as a limitation of standard EKS.
+- It calls something impossible without naming the constraints under which it is impossible.
+
+Good:
+
+> With an EKS Managed Node Group backed by a multi-AZ Auto Scaling Group, replacement placement is not reliably driven by a pending Pod's EBS AZ constraint. Standard EKS with upstream Karpenter can instead use one multi-AZ NodePool: Karpenter reads the existing PersistentVolume's zone affinity and provisions the replacement node in that AZ. EKS Auto Mode can do the same while operating the node provisioning and EBS integration for us.
+
+Why?
+
+- It names the responsible mechanisms and resources.
+- It scopes the limitation to the configuration where it applies.
+- It distinguishes platform capability from the current implementation.
+- It identifies the nearest valid alternative.
+
 # Coding agent rules
 
 If you're a coding agent, follow these rules strictly!
@@ -45,6 +113,7 @@ If you're a coding agent, follow these rules strictly!
 - Reader-first structure: Order a file as the main entry point or workflow, mid-layer business functions in call order, then leaf and shared utilities. Put only the types and constants needed to understand the workflow before it. Use prominent section headers for distinct workflows and short intent comments for major phases of a long function.
 - Obvious function boundaries: A mid-layer function must own a recognizable domain step. If its purpose is not obvious from its name and signature, redesign the boundary before adding documentation. If the domain concept itself is non-obvious, add a short docstring explaining what it means, why it exists, and one concrete example.
 - One concept per boundary: Keep discovery and iteration, parsing, policy, validation, and mutation separate. Lower-level operations should handle one explicit unit; orchestration owns scanning and repetition. Do not combine independent requirements merely because they are part of the same feature.
+- Prefer data over callbacks: Treat function-valued parameters, fields, and return values as a design smell. A callback is justified only when varying behavior is itself the domain concept. Otherwise, pass concrete data or keep the behavior in the layer that owns it.
 - Minimum viable code: Before finishing, inventory every new function, type, field, option, and layer. State which domain concept or invariant it owns. If there is no clear answer, remove or inline it.
 - Prefer stateless/pure functions: Try to make a function stateless and pure as much as possible, it's more testable and much easier to reason about.
 - Name things literally: Use concrete domain nouns and verbs. Avoid placeholder words such as `data`, `value`, `item`, `block`, or `state`, and process jargon such as `prepare`, `preflight`, or `handle`, unless they are genuinely the most precise domain terms.
