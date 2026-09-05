@@ -7,7 +7,7 @@ I like boring things: boring code, boring designs that work, and boring systems 
 More about me:
 
 - [Principles](./PRINCIPLES.md) - how I think
-- [Engineering](./ENGINEERING.md) - how I work
+- [Engineering](./ENGINEERING.md) — how I build systems
 
 ---
 
