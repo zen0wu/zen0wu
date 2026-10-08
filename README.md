@@ -6,9 +6,9 @@ I like boring things: boring code, boring designs that work, and boring systems 
 
 More about me:
 
-- [Principles](./PRINCIPLES.md) - how I think
-- [Engineering](./ENGINEERING.md) — how I build systems
+- [Coding](./skills/coding/SKILL.md) — how I write code
+- [Architecture](./skills/architecture/SKILL.md) — how I think about systems
 
 ---
 
-🤖 If you're an agent, [this version is for you](./AGENTS.md).
+🤖 If you're an agent, [this version is for you](./AGENTS.md). [Codex setup](./INSTALL.md).
